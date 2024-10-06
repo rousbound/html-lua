@@ -165,7 +165,7 @@ local function build_constructor (field)
 			elseif i == 'class' and type(v) == "table" then
 				addString(s, format (' %s="%s"', "class", hash_table_concat(v, " ")))
 			elseif i ~= "separator" then
-				if v == true then
+				if v == true then -- Ex: 'hidden = true' turns into just 'hidden'
 					addString (s, format (' %s', i ))
 				else
 					local tt = type(v)
