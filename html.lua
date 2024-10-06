@@ -107,7 +107,7 @@ end
 
 
 
-function hash_table_concat(t, sep)
+local function hash_table_concat(t, sep)
     local elements = {}
     sep = sep or ""
     local i = 1
@@ -180,6 +180,7 @@ local function build_constructor (field)
 		end
 		addString (s, '>'..separator)
 		local n = false
+		table.sort(contain)
 		for i,el in ipairs(contain) do
 			n = true
 			if type(el) == "table" then
