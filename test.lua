@@ -16,9 +16,8 @@ local function item(title)
         color = special_user and "black",
         background_color  = is_admin and "green" or "gray"
       },
-      -- you can also use just strings
-      -- style = "display: flex; justify-content: center;"
-      -- Same for the class key
+      -- or style = "display: flex; justify-content: center;"
+
       class = {
         is_admin and "button" or "card",
         anonymous_user and "bg-gray",

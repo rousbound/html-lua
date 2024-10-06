@@ -1,7 +1,7 @@
 package = "html-lua"
 version = "0.1-1"
 source = {
-   url = ""
+   url = "https://github.com/rousbound/html-lua"
 }
 description = {
    summary = "A Lua html generator library",
