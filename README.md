@@ -3,19 +3,20 @@
 ```lua
 local h = require"html"
 
-local mobile = true
+
+local is_admin = true
 
 local function item(title)
   return h.DIV{
       -- You can use either strings or tables in style key
       style = {
         display = "flex",
-        justify_content = mobile and "center" or "left",
-        background_color  = mobile and "green" or "gray"
+        justify_content = is_admin and "center" or "left",
+        background_color  = is_admin and "green" or "gray"
       },
       -- Same for the class key
       class = {
-        mobile and "button" or "card"
+        is_admin and "button" or "card"
       },
       title
     }
