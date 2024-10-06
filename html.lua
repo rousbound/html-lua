@@ -3,7 +3,10 @@
 -- @title HTML-Lua 0.1.
 -- HTML-Lua offers a collection of constructors very similar to HTML elements,
 -- but with "Lua style".
--- @release html-lua-0.1.lua tomas, geraldo
+-- Heavily inspired by tomasguisasola htk: 
+-- https://web.tecgraf.puc-rio.br/~tomas/htk/
+-- Many thanks to him.
+-- @release html-lua-0.1.lua geraldo
 -----------------------------------------------------------------------------
 
 -- Internal structure.
