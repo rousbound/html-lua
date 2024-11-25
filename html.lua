@@ -14,40 +14,6 @@
 -- can be built on-demand.
 -- All element constructors are named in capital letters.
 
-local valid_tags = {
-	A = 1, ABBR = 1, ABBREV = 1, ACRONYM = 1, ADDRESS = 1, APP = 1,
-	APPLET = 1, AREA = 2, AU = 1,
-	B = 1, BANNER = 1, BASE = 2, BASEFONT = 2, BDO = 1, BGSOUND = 1,
-	BIG = 1, BLINK = 1, BLOCKQUOTE = 1, BODY = 1, BQ = 1, BR = 2,
-	BUTTON = 1,
-	CAPTION = 1, CENTER = 1, CITE = 1, CODE = 1, COL = 2, COLGROUP = 1,
-	CREDIT = 1,
-	DD = 1, DEL = 1, DFN = 1, DIR = 1, DIV = 1, DL = 1, DT = 1,
-	EM = 1, EMBED = 1,
-	FIELDSET = 1, FIG = 1, FN = 1, FONT = 1, FORM = 1, FRAME = 2,
-	FRAMESET = 1,
-	H1 = 1, H2 = 1, H3 = 1, H4 = 1, H5 = 1, H6 = 1, HEAD = 1, HR = 2,
-	HTML = 1,
-	I = 1, IFRAME = 1, IMG = 2, INPUT = 2, INS = 1, ISINDEX = 2,
-	KBD = 1,
-	LABEL = 1, LANG = 1, LEGEND = 1, LH = 1, LI = 1, LINK = 2, LISTING = 1,
-	MAP = 1, MARQUEE = 1, MENU = 1, META = 2,
-	NEXTID = 1, NOBR = 1, NOEMBED = 1, NOFRAMES = 1, NOSCRIPT = 1, NOTE = 1,
-	OBJECT = 1, OL = 1, OPTGROUP = 1, OPTION = 1, OVERLAY = 1,
-	P = 2, PARAM = 2, PERSON = 1, PLAINTEXT = 1, PRE = 1,
-	Q = 1,
-	S = 1, SAMP = 1, SCRIPT = 1, SELECT = 1, SMALL = 1, SPAN = 1,
-	STRIKE = 1, STRONG = 1, STYLE = 1, SUB = 1, SUP = 1,
-	TAB = 1, TABLE = 1, TBODY = 1, TD = 1, TEXTAREA = 1, TFOOT = 1, TH = 1,
-	THEAD = 1, TITLE = 1, TR = 1, TT = 1,
-	U = 1, UL = 1,
-	VAR = 1,
-	WBR = 1,
-	XMP = 1,
-	SUMMARY = 1,
-	DETAILS = 1, G = 1, SVG = 1
-}
-
 local getmetatable, pairs, setmetatable, tonumber, type = getmetatable, pairs, setmetatable, tonumber, type
 local format, match, strfind, strlen = string.format, string.match, string.find, string.len
 local tinsert, tremove = table.insert, table.remove
@@ -166,7 +132,7 @@ local function build_constructor (field)
 				addString(s, format (' %s="%s"', "class", hash_table_concat(v, " ")))
 			elseif i ~= "separator" then
 				if v == true then -- Ex: 'hidden = true' turns into just 'hidden'
-					addString (s, format (' %s', i ))
+					addString (s, format (' %s', i:gsub("_", "-") ))
 				else
 					local tt = type(v)
 					if tt == "string" or tt == "number" then
@@ -180,7 +146,7 @@ local function build_constructor (field)
 		end
 		addString (s, '>'..separator)
 		local n = false
-		table.sort(contain)
+		-- table.sort(contain)
 		for i,el in ipairs(contain) do
 			n = true
 			if type(el) == "table" then
@@ -191,7 +157,7 @@ local function build_constructor (field)
 				addString (s, separator)
 			end
 		end
-		if n or (valid_tags[field] == 1) then
+		if n or (true) then
 			addString (s, '</'..field..'>')
 		end
 		return toString (s)
@@ -207,7 +173,7 @@ end
 -- @return [[ obj[field] ]].
 setmetatable (_M, {
 	__index = function (obj, field)
-		if valid_tags[field] then
+		if true then
 			-- On-demand constructor builder
 			local c = build_constructor (field)
 			_M[field] = c
