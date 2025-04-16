@@ -32,6 +32,11 @@ print(
         mobile and "ok",
         not mobile and "item1",
         not not mobile and "item2",
+        "item3",
+        "item4",
+        not not mobile and "item5",
+        "item6",
+        "item7",
       },
       items
     }

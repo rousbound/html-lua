@@ -1,12 +1,12 @@
 -----------------------------------------------------------------------------
 -- A toolkit for constructing HTML pages.
--- @title HTML-Lua 0.1.
+-- @title HTML-Lua 0.3.
 -- HTML-Lua offers a collection of constructors very similar to HTML elements,
 -- but with "Lua style".
 -- Heavily inspired by tomasguisasola htk: 
 -- https://web.tecgraf.puc-rio.br/~tomas/htk/
 -- Many thanks to him.
--- @release html-lua-0.1.lua geraldo
+-- @release html-lua-0.3.lua geraldo
 -----------------------------------------------------------------------------
 
 -- Internal structure.
@@ -20,12 +20,10 @@ local tinsert, tremove = table.insert, table.remove
 
 
 local _M = {
-	_COPYRIGHT = "Copyright (C) 2024 PUC-Rio",
+	_COPYRIGHT = "Copyright (C) 2025 PUC-Rio",
 	_DESCRIPTION = "HTML is a library of Lua constructors that create HTML elements.",
-	_VERSION = "HTML-Lua 0.1",
+	_VERSION = "HTML-Lua 0.3",
 }
-
-_M.class_defaults = {}
 
 -- stack of strings.
 -- from ltn009 (by Roberto Ierusalimschy)
@@ -50,17 +48,7 @@ local function toString (stack)
 	return stack[1]
 end
 
-function _M.CSS(obj)
-	local atts = {}
-	for k,v in pairs(obj) do
-		if type(v) ~= "boolean" then
-			table.insert(atts, k .. ":" .. v .. "; ")
-		end
-	end
-	return table.concat(atts, "")
-end
-
-function _M.BOX (obj)
+local function BOX (obj)
 	local separator = obj.separator or ''
 	local s = ""
 	for k, v in pairs(obj) do
@@ -73,23 +61,81 @@ end
 
 
 
-local function hash_table_concat(t, sep)
-    local elements = {}
-    sep = sep or ""
-    local i = 1
-    for _,v in ipairs(t) do
-    	if type(v) ~= "boolean" then
-				elements[i] = v
-				i = i + 1
-			end
-    end
+local function underscore_to_dash(identifier)
+  return identifier:gsub("_", "-")
+end
+
+local function style_concat(t)
+	local css = {}
     for k, v in pairs(t) do
-        if not elements[k] and type(v) ~= "boolean" then
-            table.insert(elements, tostring(v))
+        if type(v) ~= "boolean" then
+						k = underscore_to_dash(k)
+            table.insert(css, k .. ":" .. v)
         end
     end
-    return table.concat(elements, sep)
+	return table.concat(css, ";")
 end
+
+
+function string.split(str, delimiter)
+    local result = {}
+    local pattern = "([^" .. delimiter .. "]+)"
+    for match in string.gmatch(str, pattern) do
+        table.insert(result, match)
+    end
+    return result
+end
+
+
+local function class_concat(t)
+	local classes = {}
+    for k,v in ipairs(t) do
+    	if type(v) ~= "boolean" then
+				classes[k] = v
+			end
+    end
+    for modifier, class_list in pairs(t) do -- recursive part
+    		if type(modifier) == "string" then
+	        if type(class_list) == "string" then
+	        	class_list = string.split(class_list, " ")
+	        end
+	        if type(class_list) == "table" then
+		        for _, class in pairs(class_list) do
+		        	if type(class) == "string" then
+		        		table.insert(classes, modifier..":"..class)
+		        	elseif type(class) == "table" then
+		        		-- recursive here
+		        	end
+		        end
+		      end
+		    end
+    end
+	return table.concat(classes, " ")
+end
+
+--- Lua doesn't guarantee iteration order of numbered index with pairs
+--  So, a security measure is to force-sort them
+---@param tbl any
+---@return table
+local function reindex_table(tbl)
+    local new_tbl = {}
+    local indices = {}
+    -- Collect all numeric indices
+    for k, _ in pairs(tbl) do
+        table.insert(indices, k)
+    end
+    -- Sort the indices
+    table.sort(indices)
+    -- Populate the new table with consecutive indices
+    local index = 1
+    for _, k in ipairs(indices) do
+        new_tbl[index] = tbl[k]
+        index = index + 1
+    end
+    return new_tbl
+end
+
+
 
 -- Build an HTML element constructor.
 -- The resulting function -- the constructor -- will receive a table
@@ -105,9 +151,11 @@ end
 local function build_constructor (field)
 	return function (obj)
 		local separator = obj.separator or ''
-		local contain = {}
+		local innerHTML = {}
 		local s = newStack ()
 		addString (s, '<'..field)
+
+		-- h.H1"Title"
 		if type(obj) == "string" then
 		  addString (s, '>'..separator)
 		  addString(s, obj)
@@ -115,49 +163,47 @@ local function build_constructor (field)
 			return toString(s)
 		end
     assert(type(obj)=="table", obj)
-    local idx = 0
-		for i, v in pairs (obj) do
-			if type(i) == "number" then
-				idx = idx + 1
-				contain[idx] = v
-			elseif i == "style" and type(v) == "table" then
-				local new_v = {}
-				for att, value in pairs(v) do
-					local new_att = att:gsub("_", "-")
-					new_v[new_att] = value
-				end
-				local el = _M.CSS(new_v)
-				addString(s, format (' %s="%s"', "style", el ))
-			elseif i == 'class' and type(v) == "table" then
-				addString(s, format (' %s="%s"', "class", hash_table_concat(v, " ")))
-			elseif i ~= "separator" then
-				if v == true then -- Ex: 'hidden = true' turns into just 'hidden'
-					addString (s, format (' %s', i:gsub("_", "-") ))
+		for k, v in pairs (obj) do
+
+			-- h.DIV{ "hello", "world", }
+			if type(k) == "number" then
+				innerHTML[k] = v
+
+			-- h.H1{style = {color = 'black', background = 'red', justify_content = 'center'}}
+			elseif k == "style" and type(v) == "table" then
+				addString(s, format (' style ="%s"', style_concat(v)))
+
+			-- h.H1{class = {'text-black', 'bg-red-300', 'justify-center', md = {'w-full'}, lg = "text-lg" }}
+			elseif k == 'class' and type(v) == "table" then
+				addString(s, format (' class="%s"', class_concat(v)))
+
+			elseif k ~= "separator" then
+				if v == true then
+				-- h.H1{hidden = true}
+					addString (s, format (' %s', underscore_to_dash(k) ))
 				else
+				-- h.H1{onclick = "alert(1);"}
 					local tt = type(v)
 					if tt == "string" or tt == "number" then
-						addString (s, format (' %s="%s"', i:gsub("_", "-"), v))
+						addString (s, format (' %s="%s"', underscore_to_dash(k), v))
 					end
 				end
 			end
 		end
-		if not obj.class and _M.class_defaults[field] then
-			addString (s, format (' class="%s"', _M.class_defaults[field]))
-		end
 		addString (s, '>'..separator)
-		local n = false
-		-- table.sort(contain)
-		for i,el in ipairs(contain) do
-			n = true
+		innerHTML = reindex_table(innerHTML)
+		for i,el in ipairs(innerHTML) do
 			if type(el) == "table" then
-				el = _M.BOX(el)
+				-- unpack tables "automatically"
+				el = BOX(el)
 			end
 			if type(el) == "string" or type(el) == "number" then
 				addString (s, el)
 				addString (s, separator)
 			end
 		end
-		if n or (true) then
+		if next(innerHTML) then
+			-- not all tags need a closing tag, like <BR>
 			addString (s, '</'..field..'>')
 		end
 		return toString (s)
