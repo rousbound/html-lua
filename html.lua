@@ -219,14 +219,7 @@ end
 -- @return [[ obj[field] ]].
 setmetatable (_M, {
 	__index = function (obj, field)
-		if true then
-			-- On-demand constructor builder
-			local c = build_constructor (field)
-			_M[field] = c
-			return c
-		elseif old_index then
-			return old_index (obj, field)
-		end
+		return build_constructor (field)
 	end,
 })
 
