@@ -202,7 +202,7 @@ local function build_constructor (field)
 				addString (s, separator)
 			end
 		end
-		if next(innerHTML) then
+		if next(obj) then
 			-- not all tags need a closing tag, like <BR>
 			addString (s, '</'..field..'>')
 		end
@@ -231,3 +231,4 @@ setmetatable (_M, {
 })
 
 return _M
+
