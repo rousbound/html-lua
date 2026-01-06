@@ -58,132 +58,6 @@ local function BOX (obj)
 	return s
 end
 
-
---- Substitutes "_" with "-"
----@param identifier string
----@return string
-local function underscore_to_dash(identifier)
-	local sub = identifier:gsub("_", "-")
-  return sub
-end
-
---- Concatenates an array, skipping nil values and converting booleans.
--- 
--- Example: 
--------------------------------------------------------------- 
--- is_admin = false
--- user_style = nil
--- user_style2 = "font-size:30px;"
---------
---- The evaluation of both 'style' variables expressions below will be the same semantically.
----- (The order of key vals is not guaranteed by Lua)
--- style = {
---    display = "flex",
---    flex_direction = "column",
---    background = is_admin and "red",
---    text_align = "center",
---    "color: green",
---    is_admin and "color: green",
---    args.style
---    args.style2
--- }
--- print(style) --> "display: flex; flex-direction: column; text-align:center; color:green; font-size:30px"
--------------------------------------------------------------- 
----@param t any
----@return string
-local function style_concat(t)
-	local css = {}
-    for k, v in pairs(t) do
-        if type(v) ~= "boolean" then
-						k = underscore_to_dash(k)
-            table.insert(css, k .. ":" .. v)
-        end
-    end
-	return table.concat(css, ";")
-end
-
---- Splits string based on delimiter into table
----@param str any
----@param delimiter any
----@return table
-function string.split(str, delimiter)
-    local result = {}
-    local pattern = "([^" .. delimiter .. "]+)"
-    for match in string.gmatch(str, pattern) do
-        table.insert(result, match)
-    end
-    return result
-end
-
-
---- Concatenates an array, skipping nil values and converting booleans.
--- Also, if there's a table, we cleverly assume it is a tailwind modifier.
--- Ex:
--- is_admin = false
--- args.style = nil
--- class = {
---  "flex flex-col bg-gray",
---  is_admin and "bg-red",
---  args.style,
---  {
---   md = "w-[80%] text-white hover:bg-gray-300 active:bg-green",
---   lg = {"w-full", "text-gray-300"}
---  }
---  }
---  print(class)
--- --> "flex flex-col bg-gray md:w-[80%] md:text-white md:hover:bg-gray-300 md:active:bg-green lg:w-full lg:text-gray-300"
----@param t any
----@return string
-local function class_concat(t)
-	local classes = {}
-    for k,v in ipairs(t) do
-    	if type(v) ~= "boolean" then
-				classes[k] = v
-			end
-    end
-    for modifier, class_list in pairs(t) do -- recursive part
-    		if type(modifier) == "string" then
-	        if type(class_list) == "string" then
-	        	class_list = string.split(class_list, " ")
-	        end
-	        if type(class_list) == "table" then
-		        for _, class in pairs(class_list) do
-		        	if type(class) == "string" then
-		        		table.insert(classes, underscore_to_dash(modifier)..":"..class)
-		        	elseif type(class) == "table" then
-		        		-- recursive here
-		        	end
-		        end
-		      end
-		    end
-    end
-	return table.concat(classes, " ")
-end
-
---- Lua doesn't guarantee iteration order of numbered index with pairs
---  So, a security measure is to force-sort them
----@param tbl any
----@return table
-local function reindex_table(tbl)
-    local new_tbl = {}
-    local indices = {}
-    -- Collect all numeric indices
-    for k, _ in pairs(tbl) do
-        table.insert(indices, k)
-    end
-    -- Sort the indices
-    table.sort(indices)
-    -- Populate the new table with consecutive indices
-    local index = 1
-    for _, k in ipairs(indices) do
-        new_tbl[index] = tbl[k]
-        index = index + 1
-    end
-    return new_tbl
-end
-
-
-
 -- Build an HTML element constructor.
 -- The resulting function -- the constructor -- will receive a table
 -- representing the HTML element.
@@ -216,29 +90,26 @@ local function build_constructor (field)
 			if type(k) == "number" then
 				innerHTML[k] = v
 
-			-- h.H1{style = {color = 'black', background = 'red', justify_content = 'center'}}
 			elseif k == "style" and type(v) == "table" then
-				addString(s, format (' style ="%s"', style_concat(v)))
+				addString(s, format (' style ="%s"', v))
 
-			-- h.H1{class = {'text-black', 'bg-red-300', 'justify-center', md = {'w-full'}, lg = "text-lg" }}
 			elseif k == 'class' and type(v) == "table" then
-				addString(s, format (' class="%s"', class_concat(v)))
+				addString(s, format (' class="%s"', v))
 
 			elseif k ~= "separator" then
 				if v == true then
 				-- h.H1{hidden = true}
-					addString (s, format (' %s', underscore_to_dash(k) ))
+					addString (s, format (' %s', k ))
 				else
 				-- h.H1{onclick = "alert(1);"}
 					local tt = type(v)
 					if tt == "string" or tt == "number" then
-						addString (s, format (' %s="%s"', underscore_to_dash(k), v))
+						addString (s, format (' %s="%s"', k, v))
 					end
 				end
 			end
 		end
 		addString (s, '>'..separator)
-		innerHTML = reindex_table(innerHTML)
 		for i,el in ipairs(innerHTML) do
 			if type(el) == "table" then
 				-- unpack tables "automatically"
