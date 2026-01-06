@@ -1,8 +1,7 @@
 -----------------------------------------------------------------------------
 -- A toolkit for constructing HTML pages.
 -- @title HTML-Lua 0.3.
--- HTML-Lua offers a collection of constructors very similar to HTML elements,
--- but with "Lua style".
+-- HTML-Lua offers a DSL in Lua to generate HTML tags.
 -- Heavily inspired by tomasguisasola htk: 
 -- https://web.tecgraf.puc-rio.br/~tomas/htk/
 -- Many thanks to him.
@@ -60,11 +59,38 @@ local function BOX (obj)
 end
 
 
-
+--- Substitutes "_" with "-"
+---@param identifier string
+---@return string
 local function underscore_to_dash(identifier)
-  return identifier:gsub("_", "-")
+	local sub = identifier:gsub("_", "-")
+  return sub
 end
 
+--- Concatenates an array, skipping nil values and converting booleans.
+-- 
+-- Example: 
+-------------------------------------------------------------- 
+-- is_admin = false
+-- user_style = nil
+-- user_style2 = "font-size:30px;"
+--------
+--- The evaluation of both 'style' variables expressions below will be the same semantically.
+---- (The order of key vals is not guaranteed by Lua)
+-- style = {
+--    display = "flex",
+--    flex_direction = "column",
+--    background = is_admin and "red",
+--    text_align = "center",
+--    "color: green",
+--    is_admin and "color: green",
+--    args.style
+--    args.style2
+-- }
+-- print(style) --> "display: flex; flex-direction: column; text-align:center; color:green; font-size:30px"
+-------------------------------------------------------------- 
+---@param t any
+---@return string
 local function style_concat(t)
 	local css = {}
     for k, v in pairs(t) do
@@ -76,7 +102,10 @@ local function style_concat(t)
 	return table.concat(css, ";")
 end
 
-
+--- Splits string based on delimiter into table
+---@param str any
+---@param delimiter any
+---@return table
 function string.split(str, delimiter)
     local result = {}
     local pattern = "([^" .. delimiter .. "]+)"
@@ -87,6 +116,24 @@ function string.split(str, delimiter)
 end
 
 
+--- Concatenates an array, skipping nil values and converting booleans.
+-- Also, if there's a table, we cleverly assume it is a tailwind modifier.
+-- Ex:
+-- is_admin = false
+-- args.style = nil
+-- class = {
+--  "flex flex-col bg-gray",
+--  is_admin and "bg-red",
+--  args.style,
+--  {
+--   md = "w-[80%] text-white hover:bg-gray-300 active:bg-green",
+--   lg = {"w-full", "text-gray-300"}
+--  }
+--  }
+--  print(class)
+-- --> "flex flex-col bg-gray md:w-[80%] md:text-white md:hover:bg-gray-300 md:active:bg-green lg:w-full lg:text-gray-300"
+---@param t any
+---@return string
 local function class_concat(t)
 	local classes = {}
     for k,v in ipairs(t) do
@@ -102,7 +149,7 @@ local function class_concat(t)
 	        if type(class_list) == "table" then
 		        for _, class in pairs(class_list) do
 		        	if type(class) == "string" then
-		        		table.insert(classes, modifier..":"..class)
+		        		table.insert(classes, underscore_to_dash(modifier)..":"..class)
 		        	elseif type(class) == "table" then
 		        		-- recursive here
 		        	end
