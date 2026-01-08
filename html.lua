@@ -1,11 +1,11 @@
 -----------------------------------------------------------------------------
 -- A toolkit for constructing HTML pages.
--- @title HTML-Lua 0.3.
+-- @title HTML-Lua 0.4.
 -- HTML-Lua offers a DSL in Lua to generate HTML tags.
 -- Heavily inspired by tomasguisasola htk: 
 -- https://web.tecgraf.puc-rio.br/~tomas/htk/
 -- Many thanks to him.
--- @release html-lua-0.3.lua geraldo
+-- @release html-lua-0.4.lua geraldo
 -----------------------------------------------------------------------------
 
 -- Internal structure.
@@ -21,7 +21,7 @@ local tinsert, tremove = table.insert, table.remove
 local _M = {
 	_COPYRIGHT = "Copyright (C) 2025 PUC-Rio",
 	_DESCRIPTION = "HTML is a library of Lua constructors that create HTML elements.",
-	_VERSION = "HTML-Lua 0.3",
+	_VERSION = "HTML-Lua 0.4",
 }
 
 -- stack of strings.
